@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -15,10 +16,36 @@ import (
 
 const PATH_NAME = "../data"
 
+type fsResponse struct {
+	IsDir  bool
+	IsFile bool
+	Path   string
+}
+
 // used to turn the file name into the full relative path
 // you can also change this into absolute path
 func fullPath(filename string) string {
 	return "/" + filename
+}
+func searchAndReturnFiles(folder string) ([]fsResponse, error) {
+	result, err := os.ReadDir(folder)
+	if err != nil {
+		return []fsResponse{}, err
+
+	}
+	names := make([]fsResponse, 0, len(result)+1)
+	names = append(names, fsResponse{true, false, PATH_NAME})
+
+	for _, file := range result {
+		fullPath := filepath.Join(folder, file.Name())
+		obj := fsResponse{
+			IsDir:  file.IsDir(),
+			IsFile: !file.IsDir(),
+			Path:   fullPath,
+		}
+		names = append(names, obj)
+	}
+	return names, nil
 }
 
 // check if the folder exist, if not create one
@@ -48,17 +75,11 @@ func OpInit(path string) (bool, error) {
 }
 
 func getTheDirList(c *gin.Context) {
-	files, err := os.ReadDir(PATH_NAME)
+	names, err := searchAndReturnFiles(PATH_NAME)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": "Couldn't get the file list",
+			"message": "Something Went Wrong in getting the files",
 		})
-	}
-	var names = make([]string, 0, len(files))
-	names = append(names, "/")
-	for _, file := range files {
-		names = append(names, fullPath(file.Name()))
-
 	}
 	c.IndentedJSON(http.StatusOK, names)
 }
@@ -74,7 +95,14 @@ func fileUpload(c *gin.Context) {
 		return
 	}
 	// ../data/07-04-2026example.txt
-	saveErr := c.SaveUploadedFile(file, fullPath(date+file.Filename))
+	subFolder, OK := c.Params.Get("path")
+	// PathToSave := "../data" + name + date + file.Filename
+	PathToSave := filepath.Join(PATH_NAME, subFolder, date+file.Filename)
+	if !OK { //if the url was /file/ without any parameters
+		PathToSave = filepath.Join(PATH_NAME, date+file.Filename)
+	}
+
+	saveErr := c.SaveUploadedFile(file, PathToSave)
 	if saveErr != nil {
 		c.IndentedJSON(500, gin.H{
 			"message": "Error in Saving the file",
@@ -82,7 +110,7 @@ func fileUpload(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"message": "YESSSSS",
+		"message": subFolder,
 	})
 
 }
@@ -98,7 +126,7 @@ func downloadFile(c *gin.Context) {
 	//extract only the file name from the pathname
 	tmp := strings.Split(name, "/")
 	fileName := tmp[len(tmp)-1] //the last element for ["path","to","data","example.txt"]
-	c.FileAttachment(PATH_NAME+name, fileName)
+	c.FileAttachment(filepath.Join(PATH_NAME, name), fileName)
 }
 func landingPage(c *gin.Context) {
 	c.File("../frontend/index.html") //ik it;s messy. this is temp
@@ -111,18 +139,12 @@ func styleCSS(c *gin.Context) {
 }
 func getFiles(c *gin.Context) {
 	query := c.Query("path")
-	files, err := os.ReadDir(PATH_NAME + query)
+	names, err := searchAndReturnFiles(filepath.Join(PATH_NAME, query))
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{
-			"message": "Couldn't get the files",
+		c.IndentedJSON(404, gin.H{
+			"message": err,
 		})
-	}
-	var names = make([]string, 0, len(files))
-	query = query[1:] //get rid of the first /
-	names = append(names, "/"+query)
-	for _, file := range files {
-		names = append(names, fullPath(query+file.Name()))
-
+		return
 	}
 	c.IndentedJSON(http.StatusOK, names)
 
@@ -155,6 +177,7 @@ func main() {
 	server.GET("/style.css", styleCSS)
 	//server functions
 	server.POST("/file", fileUpload)
+	server.POST("/file/*path", fileUpload)
 	server.GET("/list", getFiles)
 	server.GET("/download/*path", downloadFile)
 	server.GET("all-file", getTheDirList)

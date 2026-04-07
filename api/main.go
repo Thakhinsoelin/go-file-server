@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -95,6 +97,22 @@ func downloadFile(c *gin.Context) {
 	}
 	c.FileAttachment(PATH_NAME+"/"+name, name)
 }
+func landingPage(c *gin.Context) {
+	c.File("../frontend/index.html") //ik it;s messy. this is temp
+}
+func jsFile(c *gin.Context) {
+	c.File("../frontend/script.js") //ik it;s messy. this is temp
+}
+
+func getLocalIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal("Could not determine local IP. Check your network connection.")
+	}
+	defer conn.Close()
+	return conn.LocalAddr().(*net.UDPAddr).IP
+}
+
 func main() {
 	result, err := OpInit(PATH_NAME)
 	if err != nil || result == false {
@@ -105,11 +123,15 @@ func main() {
 	fmt.Println("Hello World")
 
 	server := gin.Default()
+
 	server.Use(cors.Default()) // for dev only
-	server.GET("all-file", getTheDirList)
+	//for the frontend
+	server.GET("/", landingPage)
+	server.GET("/script.js", jsFile)
+	//server functions
 	server.POST("/file", fileUpload)
-	//04-26-2026_Shiloh_Dynasty(256k).mp3
+	server.GET("all-file", getTheDirList)
 	server.GET("/file/:name", downloadFile)
 
-	server.Run("localhost:3000")
+	server.Run(getLocalIP().String() + ":" + "3000")
 }

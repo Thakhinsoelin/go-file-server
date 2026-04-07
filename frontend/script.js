@@ -3,7 +3,10 @@ const container = document.getElementById("download-container");
 const form = document.querySelector("form")
 
 var dir = ""
-var api = "http://localhost:3000/"
+const URI = {
+    all : "/all-file",
+    file : "/file"
+}
 //return an anchor link with the download url attached
 function DownloadLink(url){
     const a = document.createElement("a");
@@ -18,12 +21,12 @@ function extractName(name){
         console.error("The directory is empty string. There might be an error")
     }
     let edited = name.split(dir) 
-    let urlToServer = api+"file/"+edited[1]
+    let urlToServer = URI.file + "/" + edited[1]
     return urlToServer
 }
 
 const requestAllFile = async () => {
-    const response = await fetch("http://localhost:3000/all-file")
+    const response = await fetch(URI.all)
     const result = await response.json();//should be an array
     //the first item of the result will be the directory of the data stored
     for(let i=0;i<result.length;i++){
@@ -41,11 +44,11 @@ const handleFormSubmit = async (event) =>{
     const input = form.querySelector("input");
     const formData = new FormData()
     formData.append("file",input.files[0])
-    const response = await fetch("http://localhost:3000/file",{
+    const response = await fetch(URI.file,{
         method:"POST",
         body:formData
     })
-    const result = response.json();
+    const result = await response.json();
     console.log(result)
 
 }

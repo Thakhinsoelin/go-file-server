@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -17,7 +18,7 @@ const PATH_NAME = "../data"
 // used to turn the file name into the full relative path
 // you can also change this into absolute path
 func fullPath(filename string) string {
-	return PATH_NAME + "/" + filename
+	return "/" + filename
 }
 
 // check if the folder exist, if not create one
@@ -54,7 +55,7 @@ func getTheDirList(c *gin.Context) {
 		})
 	}
 	var names = make([]string, 0, len(files))
-	names = append(names, PATH_NAME+"/")
+	names = append(names, "/")
 	for _, file := range files {
 		names = append(names, fullPath(file.Name()))
 
@@ -88,20 +89,43 @@ func fileUpload(c *gin.Context) {
 
 // this will be force download
 func downloadFile(c *gin.Context) {
-	name, OK := c.Params.Get("name")
-	// c.File(PATH_NAME + "/" + name)
+	name, OK := c.Params.Get("path")
 	if !OK {
 		c.IndentedJSON(http.StatusNoContent, gin.H{
 			"message": "Couldn't Find " + name,
 		})
 	}
-	c.FileAttachment(PATH_NAME+"/"+name, name)
+	//extract only the file name from the pathname
+	tmp := strings.Split(name, "/")
+	fileName := tmp[len(tmp)-1] //the last element for ["path","to","data","example.txt"]
+	c.FileAttachment(PATH_NAME+name, fileName)
 }
 func landingPage(c *gin.Context) {
 	c.File("../frontend/index.html") //ik it;s messy. this is temp
 }
 func jsFile(c *gin.Context) {
 	c.File("../frontend/script.js") //ik it;s messy. this is temp
+}
+func styleCSS(c *gin.Context) {
+	c.File("../frontend/style.css") //ik it;s messy. this is temp
+}
+func getFiles(c *gin.Context) {
+	query := c.Query("path")
+	files, err := os.ReadDir(PATH_NAME + query)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{
+			"message": "Couldn't get the files",
+		})
+	}
+	var names = make([]string, 0, len(files))
+	query = query[1:] //get rid of the first /
+	names = append(names, "/"+query)
+	for _, file := range files {
+		names = append(names, fullPath(query+file.Name()))
+
+	}
+	c.IndentedJSON(http.StatusOK, names)
+
 }
 
 func getLocalIP() net.IP {
@@ -128,10 +152,12 @@ func main() {
 	//for the frontend
 	server.GET("/", landingPage)
 	server.GET("/script.js", jsFile)
+	server.GET("/style.css", styleCSS)
 	//server functions
 	server.POST("/file", fileUpload)
+	server.GET("/list", getFiles)
+	server.GET("/download/*path", downloadFile)
 	server.GET("all-file", getTheDirList)
-	server.GET("/file/:name", downloadFile)
 
 	server.Run(getLocalIP().String() + ":" + "3000")
 }

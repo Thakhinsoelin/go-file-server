@@ -9,13 +9,16 @@
 <body>
     <nav>
         <a href="/">Go TO HOME</a>
+        <button id="upload-modal-btn">Upload</button>
+        <button id="get-files">List File</button>
     </nav>
-    <form id="form">
-        <input type="file" name="file">
-        <button type="submit">Submit</button>
-    </form>
-    <button id="get-all-files">Click me</button>
+    <div id="modal" class="d-none">
+        <form id="form">
+            <input type="file" name="file">
+            <button type="submit">Submit</button>
+        </form>
+    </div>
     <div id="download-container"></div>
 </body>
-<script src="./script.js"></script>
+<script defer src="./script.js"></script>
 </html>

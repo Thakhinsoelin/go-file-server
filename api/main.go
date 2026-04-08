@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -149,16 +147,6 @@ func getFiles(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, names)
 
 }
-
-func getLocalIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal("Could not determine local IP. Check your network connection.")
-	}
-	defer conn.Close()
-	return conn.LocalAddr().(*net.UDPAddr).IP
-}
-
 func main() {
 	result, err := OpInit(PATH_NAME)
 	if err != nil || result == false {
@@ -175,12 +163,14 @@ func main() {
 	server.GET("/", landingPage)
 	server.GET("/script.js", jsFile)
 	server.GET("/style.css", styleCSS)
-	//server functions
-	server.POST("/file", fileUpload)
-	server.POST("/file/*path", fileUpload)
+	/* Server Functions*/
+	//file upload
+	server.POST("/upload/file", fileUpload)
+	server.POST("/upload/file/*path", fileUpload)
+	//get the file list
+	server.GET("/list/all-file", getTheDirList)
 	server.GET("/list", getFiles)
 	server.GET("/download/*path", downloadFile)
-	server.GET("all-file", getTheDirList)
 
-	server.Run(getLocalIP().String() + ":" + "3000")
+	server.Run("0.0.0.0" + ":" + "3000")
 }

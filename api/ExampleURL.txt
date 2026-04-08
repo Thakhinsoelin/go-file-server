@@ -1,0 +1,11 @@
+since this project host both the frontend and backend from the same url, you can directly access the backend resources from url bar by changing the url to their respective ones
+
+
+frontend                            -> backend
+//get the list of files and folder in ROOT folder
+example.com/                        ->  example.com/all-file
+//get the list of specfic files and folder under certain folder
+example.com/?path=/to/your/folder   -> example.com/list?path=/to/your/folder
+//download file
+*                                   -> example.com/download/path/to/your/folder/filename.txt
+(This assume you have a central root/db folder setup.And the path is used under the root folder)

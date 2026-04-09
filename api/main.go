@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const PATH_NAME = "../data"
+const PATH_NAME = "data"
 
 type fsResponse struct {
 	IsDir  bool
@@ -23,7 +23,7 @@ type fsResponse struct {
 // used to turn the file name into the full relative path
 // you can also change this into absolute path
 func fullPath(filename string) string {
-	return "/" + filename
+	return "./" + filename
 }
 func searchAndReturnFiles(folder string) ([]fsResponse, error) {
 	result, err := os.ReadDir(folder)
@@ -35,7 +35,7 @@ func searchAndReturnFiles(folder string) ([]fsResponse, error) {
 	names = append(names, fsResponse{true, false, folder})
 
 	for _, file := range result {
-		fullPath := filepath.Join(folder, file.Name())
+		fullPath := filepath.Join("./"+folder, file.Name())
 		obj := fsResponse{
 			IsDir:  file.IsDir(),
 			IsFile: !file.IsDir(),
@@ -127,13 +127,13 @@ func downloadFile(c *gin.Context) {
 	c.FileAttachment(filepath.Join(PATH_NAME, name), fileName)
 }
 func landingPage(c *gin.Context) {
-	c.File("../frontend/index.html") //ik it;s messy. this is temp
+	c.File("./frontend/index.html") //ik it;s messy. this is temp
 }
 func jsFile(c *gin.Context) {
-	c.File("../frontend/script.js") //ik it;s messy. this is temp
+	c.File("./frontend/script.js") //ik it;s messy. this is temp
 }
 func styleCSS(c *gin.Context) {
-	c.File("../frontend/style.css") //ik it;s messy. this is temp
+	c.File("./frontend/style.css") //ik it;s messy. this is temp
 }
 func getFiles(c *gin.Context) {
 	query := c.Query("path")

@@ -2,15 +2,17 @@ const btn = document.getElementById("get-files");
 const container = document.getElementById("download-container");
 const form = document.querySelector("form")
 const uploadModalBtn = document.getElementById("upload-modal-btn")
-
+const breadCrumb = document.getElementById("bread-crumb")
 var dir = ""
+
+const BASE_URL = ""
 const URI = {
-    base: "/",//stands for same origin
-    public : "/public",
-    all :  "/list/all-file",
-    file : "/upload/file",
-    list :  "/list",
-    download: "/download"
+    base    : BASE_URL + "/",//stands for same origin
+    public  : BASE_URL + "/public",
+    all     : BASE_URL + "/list/all-file",
+    file    : BASE_URL + "/upload/file",
+    list    : BASE_URL + "/list",
+    download: BASE_URL + "/download"
 
 }
 //return an anchor link with the download url attached
@@ -96,7 +98,7 @@ const handleFormSubmit = async (event) =>{
     const result = await response.json();
     console.log(result)
     input.value = ''
-
+    init()
 
 }
 //takes in the path of the dir
@@ -128,9 +130,43 @@ const openUploadModal = () =>{
     //once the modal is opened, this event listener will be set up
     window.addEventListener("click",handleCloseModal)
 }
+const updateBreadCrumb = () => {//clanker code
+    const currentUrl = new URL(window.location.href);
+    let pathname = currentUrl.searchParams.get("path");
 
+    if (!pathname || pathname === "/") return;
 
+    // Decode URL-encoded characters (%5C → \)
+    pathname = decodeURIComponent(pathname);
 
+    // Normalize backslashes to forward slashes
+    pathname = pathname.replace(/\\/g, "/");
+
+    // Split into folders
+    const folders = pathname.split("/").filter(Boolean); // remove empty strings
+
+    // Reset breadcrumb
+    breadCrumb.innerHTML = `
+            <li class="crumbs">
+                <a href=${URI.base}>/</a>
+            </li>`;
+
+    let accumulatedPath = "";
+
+    folders.forEach(route => {
+        accumulatedPath += `/${encodeURIComponent(route)}`; // build path safely
+        breadCrumb.innerHTML += `
+            <li class="crumbs">
+                <a href="?path=${accumulatedPath}">${route}</a>
+            </li>`;
+    });
+};
+
+function init(){
+    updateBreadCrumb()
+    requestToLocation()
+}
 btn.addEventListener('click',requestToLocation)
 form.addEventListener("submit",handleFormSubmit)
 uploadModalBtn.addEventListener("click",openUploadModal)
+window.addEventListener("load",init)

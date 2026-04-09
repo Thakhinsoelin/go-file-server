@@ -112,3 +112,23 @@ nav button{
     text-align: center;
     
 }
+/* Bread Crumbs */
+#bread-crumb {
+    height:1.5rem;
+    width:100%;
+    padding-left:3rem;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    background-color: #ffffffa7;
+    list-style: "/";
+    
+}
+.crumbs  {
+    margin: 0 3rem;
+}
+.crumbs a  {
+    color: black;
+    text-decoration: none;
+
+}

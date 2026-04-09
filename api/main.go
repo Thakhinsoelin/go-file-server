@@ -32,7 +32,7 @@ func searchAndReturnFiles(folder string) ([]fsResponse, error) {
 
 	}
 	names := make([]fsResponse, 0, len(result)+1)
-	names = append(names, fsResponse{true, false, PATH_NAME})
+	names = append(names, fsResponse{true, false, folder})
 
 	for _, file := range result {
 		fullPath := filepath.Join(folder, file.Name())
@@ -159,6 +159,7 @@ func main() {
 	server := gin.Default()
 
 	server.Use(cors.Default()) // for dev only
+	server.Static("/public", "../public/")
 	//for the frontend
 	server.GET("/", landingPage)
 	server.GET("/script.js", jsFile)

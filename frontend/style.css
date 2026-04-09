@@ -6,11 +6,14 @@
 :root{
     --navbar-height:3rem;
 }
+body{
+    background-color: #101010e8;
+}
 #form{
     background-color: rgb(226, 226, 226);
     width:50%;
     height: 40vh;
-    margin: 10vw auto;
+    margin: 15vw auto;
     border-radius: 1rem;
     padding:6vw 2vw 0 2vw;
     display: flex;
@@ -70,4 +73,42 @@ nav button{
     width: 100vw;
     height:100vh;
     background-color: rgba(0,0,0,0.6);
+}
+
+/* download container */
+/* #download-container{
+    width:95vw;
+    margin:0 auto;
+    display:grid;
+    justify-content: center;
+    grid-template-columns: repeat(auto-fill, minmax(100px,1fr));
+    gap:20px;
+
+} */
+#download-container{
+    width: 95vw;
+    margin: 0 auto;
+    padding-left: 4vw;
+    display: flex;
+    gap:20px;
+    flex-wrap: wrap;
+    
+}
+#download-container > a {
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    width:min(20vw,100px);
+    height:160px;
+    text-decoration: none;
+    color:inherit;
+    overflow: hidden;
+
+}
+#download-container > a > *:last-child{
+    display: block;
+    color:white;
+    width: 100%;
+    text-align: center;
+    
 }

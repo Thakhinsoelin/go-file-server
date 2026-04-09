@@ -6,51 +6,69 @@ const uploadModalBtn = document.getElementById("upload-modal-btn")
 var dir = ""
 const URI = {
     base: "/",//stands for same origin
-    all : "/list/all-file",
+    public : "/public",
+    all :  "/list/all-file",
     file : "/upload/file",
-    list : "/list",
-    download:"/download"
+    list :  "/list",
+    download: "/download"
 
 }
 //return an anchor link with the download url attached
-function DownloadLink(url,isDownload = true){
-    const a = document.createElement("a");
-    a.textContent =  url
-    a.setAttribute("href", url)
-    isDownload && a.setAttribute("download",true)
+function DownloadLink(obj){
+    let {IsFile,Path} = obj;
+    let currentUrl = new URL(window.location.href)
+    let pathname = currentUrl.searchParams.get("path") 
+    if(pathname == null){
+        pathname = ""
+    }
+    url = IsFile ? extractNameForDownload(pathname,Path) : extractNameForFolder(pathname,Path)
+    const a = document.createElement('a');
+    const img = document.createElement('img')
+    const small = document.createElement('small')
+    // from child to parent order
+    small.textContent = Path.slice(dir.length + 1)//+1 is for the backward slash
+    img.src = `${URI.public}${IsFile ? "/FileIcon.png" : "/DirectoryIcon.png"}`
+    img.alt = IsFile ? "FileIcon" : "DirectoryIcon";
+    a.href= url
+    a.classList.add(IsFile ? "file" : "folder")
+    a.appendChild(img)
+    a.appendChild(small)
     return a;
+
 }
+
 //a helper function to get the file name from the relative file system name
 //for the direct downloads of files
-function extractNameForDownload(name){
+function extractNameForDownload(path,name){
     if(dir == ""){
         console.error("The directory is empty string. There might be an error")
     }
     let edited = name.slice(dir.length)//had to use slice because \ and / can be different in each system
-    let urlToServer = URI.download + edited
+    let urlToServer = URI.download + path + edited
     return urlToServer
 }
 //this will make the link for the folder navigation in frontend
-function extractNameForFolder(name){
+function extractNameForFolder(path,name){
     if(dir == ""){
         console.error("The directory is empty string. There might be an error")
     }
     let edited = name.slice(dir.length)//had to use slice because \ and / can be different in each system
-    let urlToFolder = URI.base + "?path="+ edited//this will take the user to another folder url in frontend
+    let urlToFolder = URI.base + "?path="+ path +  edited //this will take the user to another folder url in frontend
     return urlToFolder
 }
 function populateDownloadLinks(ary){
     //the first item of the result will be the directory of the data stored
+    container.innerHTML = ""
     for(let i=0;i<ary.length;i++){
         if(i===0){
             dir = ary[0].Path
             continue
         }
         if(ary[i].IsDir){
-            container.append(DownloadLink(extractNameForFolder(ary[i].Path),false))
+            container.append(DownloadLink(ary[i]))
             container.append(document.createElement("br"))      
         }else if (ary[i].IsFile){
-            container.append(DownloadLink(extractNameForDownload(ary[i].Path)))   
+            container.append(DownloadLink(ary[i]))   
             container.append(document.createElement("br"))      
         }
     }

@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -81,32 +84,32 @@ func getTheDirList(c *gin.Context) {
 	}
 	c.IndentedJSON(http.StatusOK, names)
 }
+
 func fileUpload(c *gin.Context) {
 	now := time.Now()
 	date := now.Format("01-06-2006")
 
-	file, err := c.FormFile("file")
+	form, err := c.MultipartForm()
 	if err != nil {
 		c.IndentedJSON(500, gin.H{
 			"message": err,
 		})
 		return
 	}
+
+	files := form.File["file"]
+
 	// ../data/07-04-2026example.txt
-	subFolder, OK := c.Params.Get("path")
-	// PathToSave := "../data" + name + date + file.Filename
-	PathToSave := filepath.Join(PATH_NAME, subFolder, date+file.Filename)
-	if !OK { //if the url was /file/ without any parameters
-		PathToSave = filepath.Join(PATH_NAME, date+file.Filename)
+	subFolder, _ := c.Params.Get("path")
+
+	for _, file := range files {
+		PathToSave := filepath.Join(PATH_NAME, subFolder, date+file.Filename)
+		if err := c.SaveUploadedFile(file, PathToSave); err != nil {
+			c.IndentedJSON(500, gin.H{"message": "Error saving " + file.Filename})
+			return
+		}
 	}
 
-	saveErr := c.SaveUploadedFile(file, PathToSave)
-	if saveErr != nil {
-		c.IndentedJSON(500, gin.H{
-			"message": "Error in Saving the file",
-		})
-		return
-	}
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"message": subFolder,
 	})
@@ -159,7 +162,9 @@ func main() {
 	server := gin.Default()
 
 	server.Use(cors.Default()) // for dev only
-	server.Static("/public", "../public/")
+
+	//Here is the problem
+	server.Static("/public", "public/")
 	//for the frontend
 	server.GET("/", landingPage)
 	server.GET("/script.js", jsFile)
@@ -173,5 +178,64 @@ func main() {
 	server.GET("/list", getFiles)
 	server.GET("/download/*path", downloadFile)
 
+	// folder creation request
+	server.POST("/create-folder", createFolder)
+	// file delete request
+	server.DELETE("/delete/*path", deleteFile)
+	//fmt.Println("Server is running on ", getLocalIP().String())
+	color.Green("Server is running on ", getLocalIP().String())
+	//Good Job
 	server.Run("0.0.0.0" + ":" + "3000")
+}
+
+func getLocalIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal("Could not determine local IP. Check your network connection.")
+	}
+	defer conn.Close()
+	return conn.LocalAddr().(*net.UDPAddr).IP
+}
+
+func deleteFile(c *gin.Context) {
+	// Get the path from the URL parameters
+	filePath, OK := c.Params.Get("path")
+	fmt.Print(filePath)
+	if !OK {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Path is required"})
+		return
+	}
+
+	// Construct the full system path
+	fullSystemPath := filepath.Join(PATH_NAME, filePath)
+
+	// Delete the file or empty directory
+	err := os.Remove(fullSystemPath)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Failed to delete: " + err.Error()})
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": "Successfully deleted"})
+}
+
+func createFolder(c *gin.Context) {
+	parentPath := c.Query("path")
+	folderName := c.Query("name")
+
+	if folderName == "" {
+		c.JSON(400, gin.H{"message": "Folder name is required"})
+		return
+	}
+
+	// Use filepath.Join to avoid slash issues
+	fullPath := filepath.Join(PATH_NAME, parentPath, folderName)
+
+	err := os.Mkdir(fullPath, 0755)
+	if err != nil {
+		c.JSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Folder created"})
 }

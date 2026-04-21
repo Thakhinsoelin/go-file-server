@@ -44,8 +44,11 @@ func searchAndReturnFiles(folder string) ([]fsResponse, error) {
 			IsFile: !file.IsDir(),
 			Path:   fullPath,
 		}
+		fmt.Print(obj)
+		fmt.Println("hello")
 		names = append(names, obj)
 	}
+
 	return names, nil
 }
 

@@ -156,6 +156,7 @@ const handleFormSubmit = async (event) =>{
 //takes in the path of the dir
 const requestToLocation = async() =>{
     let currentUrl = new URL(window.location.href)
+    console.log(URI.all)
     let pathname = currentUrl.searchParams.get("path")
     let response;
     if(pathname == "/" || pathname == null){//this will be send to default route
